@@ -1,7 +1,8 @@
 require_relative "integration_test"
 
-class MainTest < IntegrationTest
+class IntegrationMainTest < IntegrationTest
   test "envify, deploy, redeploy, rollback, details and audit" do
+    kamal :server, :bootstrap
     kamal :envify
     assert_local_env_file "SECRET_TOKEN=1234"
     assert_remote_env_file "SECRET_TOKEN=1234"
@@ -9,7 +10,7 @@ class MainTest < IntegrationTest
 
     first_version = latest_app_version
 
-    assert_app_is_down
+    assert_app_is_down response_code: "502"
 
     kamal :deploy
     assert_app_is_up version: first_version
@@ -31,11 +32,11 @@ class MainTest < IntegrationTest
     assert_app_is_up version: first_version
 
     details = kamal :details, capture: true
-    assert_match /Traefik Host: vm1/, details
-    assert_match /Traefik Host: vm2/, details
+    assert_match /Proxy Host: vm1/, details
+    assert_match /Proxy Host: vm2/, details
     assert_match /App Host: vm1/, details
     assert_match /App Host: vm2/, details
-    assert_match /traefik:v2.10/, details
+    assert_match /basecamp\/parachute:latest/, details
     assert_match /registry:4443\/app:#{first_version}/, details
 
     audit = kamal :audit, capture: true
@@ -48,11 +49,12 @@ class MainTest < IntegrationTest
   test "app with roles" do
     @app = "app_with_roles"
 
+    kamal :server, :bootstrap
     kamal :envify
 
     version = latest_app_version
 
-    assert_app_is_down
+    assert_app_is_down response_code: "502"
 
     kamal :deploy
 
@@ -76,7 +78,7 @@ class MainTest < IntegrationTest
     assert_equal({ user: "root", port: 22, keepalive: true, keepalive_interval: 30, log_level: :fatal }, config[:ssh_options])
     assert_equal({ "multiarch" => false, "args" => { "COMMIT_SHA" => version } }, config[:builder])
     assert_equal [ "--log-opt", "max-size=\"10m\"" ], config[:logging]
-    assert_equal({ "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "cord"=>"/tmp/kamal-cord", "log_lines" => 50, "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1" }, config[:healthcheck])
+    assert_equal({ "path" => "/up", "port" => 3000, "max_attempts" => 7, "exposed_port" => 3999, "log_lines" => 50, "cmd"=>"wget -qO- http://localhost > /dev/null || exit 1" }, config[:healthcheck])
   end
 
   test "setup and remove" do

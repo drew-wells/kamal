@@ -1,5 +1,5 @@
 class Kamal::Commands::App < Kamal::Commands::Base
-  include Assets, Containers, Cord, Execution, Images, Logging
+  include Assets, Containers, Execution, Images, Logging
 
   ACTIVE_DOCKER_STATUSES = [ :running, :restarting ]
 
@@ -15,6 +15,7 @@ class Kamal::Commands::App < Kamal::Commands::Base
       "--detach",
       "--restart unless-stopped",
       "--name", container_name,
+      "--network kamal",
       *([ "--hostname", hostname ] if hostname),
       "-e", "KAMAL_CONTAINER_NAME=\"#{container_name}\"",
       "-e", "KAMAL_VERSION=\"#{config.version}\"",
@@ -56,6 +57,10 @@ class Kamal::Commands::App < Kamal::Commands::Base
     container_id_for(container_name: container_name(version), only_running: only_running)
   end
 
+  def container_name(version = nil)
+    [ role.container_prefix, version || config.version ].compact.join("-")
+  end
+
   def current_running_version
     list_versions("--latest", statuses: ACTIVE_DOCKER_STATUSES)
   end
@@ -77,10 +82,6 @@ class Kamal::Commands::App < Kamal::Commands::Base
 
 
   private
-    def container_name(version = nil)
-      [ role.container_prefix, version || config.version ].compact.join("-")
-    end
-
     def filter_args(statuses: nil)
       argumentize "--filter", filters(statuses: statuses)
     end
