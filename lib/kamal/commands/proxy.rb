@@ -111,6 +111,6 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
     end
 
     def container_name
-      "parachute"
+      "parachute_#{host_port}"
     end
 end

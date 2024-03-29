@@ -4,7 +4,7 @@ class CliProxyTest < CliTestCase
   test "boot" do
     run_command("boot").tap do |output|
       assert_match "docker login", output
-      assert_match "docker run --name parachute --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}", output
+      assert_match "docker run --name parachute_80 --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}", output
     end
   end
 
@@ -14,7 +14,7 @@ class CliProxyTest < CliTestCase
     run_command("reboot", "-y").tap do |output|
       assert_match "docker container stop parachute", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=parachute", output
-      assert_match "docker run --name parachute --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}", output
+      assert_match "docker run --name parachute_80 --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}", output
     end
   end
 
@@ -47,13 +47,13 @@ class CliProxyTest < CliTestCase
 
   test "details" do
     run_command("details").tap do |output|
-      assert_match "docker ps --filter name=^parachute$", output
+      assert_match "docker ps --filter name=^parachute_80$", output
     end
   end
 
   test "logs" do
     SSHKit::Backend::Abstract.any_instance.stubs(:capture)
-      .with(:docker, :logs, "parachute", " --tail 100", "--timestamps", "2>&1")
+      .with(:docker, :logs, "parachute_80", " --tail 100", "--timestamps", "2>&1")
       .returns("Log entry")
 
     run_command("logs").tap do |output|
@@ -64,9 +64,9 @@ class CliProxyTest < CliTestCase
 
   test "logs with follow" do
     SSHKit::Backend::Abstract.any_instance.stubs(:exec)
-      .with("ssh -t root@1.1.1.1 -p 22 'docker logs parachute --timestamps --tail 10 --follow 2>&1'")
+      .with("ssh -t root@1.1.1.1 -p 22 'docker logs parachute_80 --timestamps --tail 10 --follow 2>&1'")
 
-    assert_match "docker logs parachute --timestamps --tail 10 --follow", run_command("logs", "--follow")
+    assert_match "docker logs parachute_80 --timestamps --tail 10 --follow", run_command("logs", "--follow")
   end
 
   test "remove" do
