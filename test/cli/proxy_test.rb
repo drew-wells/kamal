@@ -4,7 +4,7 @@ class CliProxyTest < CliTestCase
   test "boot" do
     run_command("boot").tap do |output|
       assert_match "docker login", output
-      assert_match "docker run --name parachute_80 --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}", output
+      assert_match "docker run --name parachute_80 --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --volume parachute_80:/root/.config/parachute --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}", output
     end
   end
 
@@ -14,7 +14,7 @@ class CliProxyTest < CliTestCase
     run_command("reboot", "-y").tap do |output|
       assert_match "docker container stop parachute", output
       assert_match "docker container prune --force --filter label=org.opencontainers.image.title=parachute", output
-      assert_match "docker run --name parachute_80 --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}", output
+      assert_match "docker run --name parachute_80 --detach --restart unless-stopped --network kamal --publish 80:80 --volume /var/run/docker.sock:/var/run/docker.sock --volume parachute_80:/root/.config/parachute --log-opt max-size=\"10m\" #{Kamal::Commands::Proxy::DEFAULT_IMAGE}", output
     end
   end
 

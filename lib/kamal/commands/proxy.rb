@@ -13,6 +13,7 @@ class Kamal::Commands::Proxy < Kamal::Commands::Base
       "--network kamal",
       *publish_args,
       "--volume", "/var/run/docker.sock:/var/run/docker.sock",
+      "--volume", "#{container_name}:/root/.config/parachute",
       *config.logging_args,
       *label_args,
       *docker_options_args,
