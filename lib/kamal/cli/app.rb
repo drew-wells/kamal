@@ -2,28 +2,26 @@ class Kamal::Cli::App < Kamal::Cli::Base
   desc "boot", "Boot app on servers (or reboot app if already running)"
   def boot
     mutating do
-      hold_lock_on_error do
-        say "Get most recent version available as an image...", :magenta unless options[:version]
-        using_version(version_or_latest) do |version|
-          say "Start container with version #{version} using a #{KAMAL.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
+      say "Get most recent version available as an image...", :magenta unless options[:version]
+      using_version(version_or_latest) do |version|
+        say "Start container with version #{version} using a #{KAMAL.config.readiness_delay}s readiness delay (or reboot if already running)...", :magenta
 
-          # Assets are prepared in a separate step to ensure they are on all hosts before booting
-          on(KAMAL.hosts) do
-            KAMAL.roles_on(host).each do |role|
-              Kamal::Cli::App::PrepareAssets.new(host, role, self).run
-            end
+        # Assets are prepared in a separate step to ensure they are on all hosts before booting
+        on(KAMAL.hosts) do
+          KAMAL.roles_on(host).each do |role|
+            Kamal::Cli::App::PrepareAssets.new(host, role, self).run
           end
+        end
 
-          on(KAMAL.hosts, **KAMAL.boot_strategy) do |host|
-            KAMAL.roles_on(host).each do |role|
-              Kamal::Cli::App::Boot.new(host, role, version, self).run
-            end
+        on(KAMAL.hosts, **KAMAL.boot_strategy) do |host|
+          KAMAL.roles_on(host).each do |role|
+            Kamal::Cli::App::Boot.new(host, role, version, self).run
           end
+        end
 
-          on(KAMAL.hosts) do |host|
-            execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
-            execute *KAMAL.app.tag_latest_image
-          end
+        on(KAMAL.hosts) do |host|
+          execute *KAMAL.auditor.record("Tagging #{KAMAL.config.absolute_image} as the latest image"), verbosity: :debug
+          execute *KAMAL.app.tag_latest_image
         end
       end
     end
